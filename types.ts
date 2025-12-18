@@ -4,11 +4,16 @@ export interface GroundingSource {
   uri: string;
 }
 
+export type Language = 'zh' | 'en';
+
 export interface IntelligenceReport {
   content: string;
   sources: GroundingSource[];
   companyName: string;
   timestamp: string;
+  website?: string;
+  logoUrl?: string;
+  language: Language;
 }
 
 export enum AnalysisStatus {
