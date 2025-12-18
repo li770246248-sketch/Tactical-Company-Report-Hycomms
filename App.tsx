@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import AnalysisHeader from './components/AnalysisHeader';
 import ReportDisplay from './components/ReportDisplay';
+import ChatPanel from './components/ChatPanel';
 import { generateMarketReport } from './services/geminiService';
 import { IntelligenceReport, AnalysisStatus, Language } from './types';
 
@@ -14,9 +15,11 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('zh');
   const [history, setHistory] = useState<IntelligenceReport[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load history from localStorage on mount
+  // Load history from localStorage (Simulating Google Cloud retrieval)
   useEffect(() => {
+    setIsSyncing(true);
     const savedHistory = localStorage.getItem('intel_history');
     if (savedHistory) {
       try {
@@ -25,11 +28,17 @@ const App: React.FC = () => {
         console.error("Failed to parse history", e);
       }
     }
+    setTimeout(() => setIsSyncing(false), 800);
   }, []);
 
-  // Save history to localStorage when it changes
+  // Save history to localStorage (Simulating Google Cloud sync)
   useEffect(() => {
-    localStorage.setItem('intel_history', JSON.stringify(history));
+    if (history.length > 0) {
+      setIsSyncing(true);
+      localStorage.setItem('intel_history', JSON.stringify(history));
+      const timeout = setTimeout(() => setIsSyncing(false), 500);
+      return () => clearTimeout(timeout);
+    }
   }, [history]);
 
   const handleAnalyze = async (e?: React.FormEvent) => {
@@ -62,6 +71,11 @@ const App: React.FC = () => {
     }
   };
 
+  const updateReport = (updatedReport: IntelligenceReport) => {
+    setReport(updatedReport);
+    setHistory(prev => prev.map(item => item.id === updatedReport.id ? updatedReport : item));
+  };
+
   const deleteHistoryItem = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setHistory(prev => prev.filter(item => item.id !== id));
@@ -83,7 +97,8 @@ const App: React.FC = () => {
       historyHeader: "历史报告",
       noHistory: "暂无历史记录",
       newAnalysis: "新建分析",
-      clearHistory: "清空历史"
+      clearHistory: "清空历史",
+      syncStatus: "同步到 Google Cloud"
     },
     en: {
       placeholder: "Target competitor (e.g., Elbit Systems)",
@@ -99,16 +114,17 @@ const App: React.FC = () => {
       historyHeader: "History",
       noHistory: "No records",
       newAnalysis: "New Analysis",
-      clearHistory: "Clear"
+      clearHistory: "Clear",
+      syncStatus: "Sync to Google Cloud"
     }
   }[language];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
       <AnalysisHeader language={language} onLanguageChange={setLanguage} />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
+        {/* Sidebar: History */}
         <aside 
           className={`${sidebarOpen ? 'w-72' : 'w-0'} bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col overflow-hidden shrink-0 print:hidden z-40`}
         >
@@ -172,7 +188,10 @@ const App: React.FC = () => {
           
           <div className="p-4 border-t border-slate-800">
             <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
-              <span>STORAGE: {Math.round(JSON.stringify(history).length / 1024)} KB</span>
+              <div className="flex items-center gap-2">
+                <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></div>
+                <span>{isSyncing ? 'SYNCING...' : 'CLOUD SYNCED'}</span>
+              </div>
               {history.length > 0 && (
                 <button 
                   onClick={() => { if(confirm('Clear history?')) setHistory([]) }}
@@ -189,7 +208,7 @@ const App: React.FC = () => {
         <main className="flex-1 flex flex-col overflow-y-auto relative bg-slate-50">
           <div className="p-4 sm:p-8 max-w-5xl mx-auto w-full">
             
-            {/* Control Bar (Integrated Search) */}
+            {/* Control Bar */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 sticky top-0 z-30 print:hidden">
               <form onSubmit={handleAnalyze} className="flex gap-2">
                 <div className="flex-1 relative">
@@ -283,6 +302,17 @@ const App: React.FC = () => {
             )}
           </div>
         </main>
+
+        {/* Sidebar: Chat Follow-up */}
+        {report && status === AnalysisStatus.COMPLETED && (
+          <aside className="shrink-0 print:hidden h-full flex">
+            <ChatPanel 
+              report={report} 
+              language={language} 
+              onUpdateReport={updateReport} 
+            />
+          </aside>
+        )}
       </div>
 
       <style>{`

@@ -11,28 +11,46 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ report }) => {
 
   const formatContent = (content: string) => {
     return content.split('\n').map((line, index) => {
+      // Handle Main Sections
       if (line.startsWith('### ')) {
         return <h3 key={index} className="text-2xl font-bold text-slate-800 mt-10 mb-4 pb-2 border-b-2 border-slate-100 uppercase tracking-tight">{line.replace('### ', '')}</h3>;
       }
+      
+      // Handle Sub Sections (e.g., Competition landscape sub-titles or News dates)
       if (line.startsWith('#### ')) {
         return <h4 key={index} className="text-lg font-bold text-blue-700 mt-8 mb-3 flex items-center gap-2">
-          <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+          <span className="w-1.5 h-6 bg-blue-600 rounded-sm"></span>
           {line.replace('#### ', '')}
         </h4>;
       }
-      if (line.startsWith('- ')) {
-        if (line.includes('原文链接：') || line.includes('Original Link:')) {
-          const splitText = isZH ? '原文链接：' : 'Original Link:';
-          const parts = line.split(splitText);
-          const url = parts[1].trim();
+
+      // Handle Bullet Points
+      if (line.trim().startsWith('- ')) {
+        const cleanLine = line.trim().replace('- ', '');
+        
+        // Special rendering for Link lines
+        if (cleanLine.includes('原文链接：') || cleanLine.includes('Original Link:') || cleanLine.startsWith('http')) {
+          let label = "";
+          let url = cleanLine;
+
+          if (cleanLine.includes('原文链接：')) {
+            const parts = cleanLine.split('原文链接：');
+            label = "原文链接：";
+            url = parts[1].trim();
+          } else if (cleanLine.includes('Original Link:')) {
+            const parts = cleanLine.split('Original Link:');
+            label = "Original Link:";
+            url = parts[1].trim();
+          }
+
           return (
-            <li key={index} className="ml-4 mb-3 list-none bg-slate-50 p-3 rounded-lg border border-slate-100">
-              <span className="text-slate-500 font-bold text-[10px] uppercase block mb-1">{splitText}</span>
+            <li key={index} className="ml-4 mb-3 list-none bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+              {label && <span className="text-slate-500 font-bold text-[10px] uppercase block mb-1">{label}</span>}
               <a 
                 href={url} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-blue-600 hover:text-blue-800 break-all text-sm font-mono"
+                className="text-blue-600 hover:text-blue-800 break-all text-sm font-mono underline decoration-blue-200 underline-offset-4"
               >
                 {url}
                 <i className="fas fa-external-link-alt ml-2 text-[10px]"></i>
@@ -40,8 +58,21 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ report }) => {
             </li>
           );
         }
-        return <li key={index} className="ml-6 mb-2 list-disc text-slate-700 leading-relaxed font-medium">{line.replace('- ', '')}</li>;
+        
+        // Highlight "Core Summary" or "核心摘要"
+        if (cleanLine.includes('核心摘要：')) {
+           const parts = cleanLine.split('核心摘要：');
+           return (
+             <li key={index} className="ml-6 mb-4 list-disc text-slate-700 leading-relaxed">
+               <span className="font-bold text-slate-900">核心摘要：</span>
+               {parts[1]}
+             </li>
+           );
+        }
+
+        return <li key={index} className="ml-6 mb-2 list-disc text-slate-700 leading-relaxed font-medium">{cleanLine}</li>;
       }
+
       if (line.trim() === '') return null;
       return <p key={index} className="mb-4 text-slate-700 leading-relaxed">{line}</p>;
     });
@@ -71,7 +102,13 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ report }) => {
           ${report.content.split('\n').map(line => {
             if (line.startsWith('### ')) return `<h2 class="text-2xl font-bold mt-10 mb-4 uppercase border-b border-slate-200 pb-2">${line.replace('### ', '')}</h2>`;
             if (line.startsWith('#### ')) return `<h3 class="text-xl font-bold mt-6 mb-3 text-blue-700">${line.replace('#### ', '')}</h3>`;
-            if (line.startsWith('- ')) return `<li class="ml-6 mb-2">${line.replace('- ', '')}</li>`;
+            if (line.startsWith('- ')) {
+               const cleanLine = line.replace('- ', '');
+               if (cleanLine.includes('http')) {
+                 return `<li class="ml-6 mb-2"><a href="${cleanLine.split('：').pop()}" style="color: blue; text-decoration: underline;">${cleanLine}</a></li>`;
+               }
+               return `<li class="ml-6 mb-2">${cleanLine}</li>`;
+            }
             return `<p class="mb-4 text-slate-700">${line}</p>`;
           }).join('')}
         </div>

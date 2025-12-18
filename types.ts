@@ -6,6 +6,12 @@ export interface GroundingSource {
 
 export type Language = 'zh' | 'en';
 
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+  timestamp: string;
+}
+
 export interface IntelligenceReport {
   id: string;
   content: string;
@@ -15,6 +21,7 @@ export interface IntelligenceReport {
   website?: string;
   logoUrl?: string;
   language: Language;
+  chatHistory?: ChatMessage[];
 }
 
 export enum AnalysisStatus {
