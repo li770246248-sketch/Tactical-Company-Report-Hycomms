@@ -96,6 +96,7 @@ export const generateMarketReport = async (companyName: string, lang: Language =
       .filter(source => source.uri !== "");
 
     return {
+      id: crypto.randomUUID(),
       content: cleanText,
       sources,
       companyName,

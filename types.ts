@@ -7,6 +7,7 @@ export interface GroundingSource {
 export type Language = 'zh' | 'en';
 
 export interface IntelligenceReport {
+  id: string;
   content: string;
   sources: GroundingSource[];
   companyName: string;
