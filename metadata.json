@@ -1,0 +1,5 @@
+{
+  "name": "战术通信全球市场情报分析系统",
+  "description": "专业级市场情报分析工具，利用 Gemini 3 与 Google Search Grounding 技术，深度挖掘 2025 年全球战术通信行业竞品动态、新闻与市场趋势，并生成标准化中文报告。",
+  "requestFramePermissions": []
+}
